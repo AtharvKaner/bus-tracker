@@ -1,3 +1,81 @@
+// Next Stop Alert popup logic
+let busAnimInterval = null;
+let busAnimCurrentIdx = 0;
+let busAnimStops = [];
+let busAnimDestination = '';
+
+function openNextStopPopup(stops, currentIdx, destinationName) {
+  const popup = document.getElementById('nextStopPopup');
+  const flex = document.getElementById('timelineFlex');
+  const reminder = document.getElementById('nextStopReminder');
+  flex.innerHTML = '';
+  // Timeline line
+  const line = document.createElement('div');
+  line.className = 'timeline-line';
+  flex.appendChild(line);
+  // Add stops
+  stops.forEach((stop, i) => {
+    const stopDiv = document.createElement('div');
+    stopDiv.className = 'timeline-stop';
+    // Marker
+    const marker = document.createElement('div');
+    marker.className = 'timeline-marker' + (i === currentIdx ? ' current' : '');
+    stopDiv.appendChild(marker);
+    // Bus icon above current stop
+    if (i === currentIdx) {
+      const bus = document.createElement('div');
+      bus.className = 'timeline-bus';
+      bus.innerHTML = `<svg width="32" height="22" viewBox="0 0 32 22" fill="none"><rect x="2" y="6" width="28" height="10" rx="4" fill="#1976d2"/><rect x="6" y="10" width="20" height="4" rx="2" fill="#e3f2fd"/><circle cx="8" cy="18" r="2" fill="#222"/><circle cx="24" cy="18" r="2" fill="#222"/></svg>`;
+      stopDiv.appendChild(bus);
+    }
+    // Stop name
+    const name = document.createElement('div');
+    name.className = 'timeline-stop-name';
+    name.textContent = stop;
+    stopDiv.appendChild(name);
+    flex.appendChild(stopDiv);
+  });
+  reminder.textContent = `We will remind you before your destination: ${destinationName}`;
+  popup.style.display = 'flex';
+  // Scroll to current stop
+  const stopsEls = flex.querySelectorAll('.timeline-stop');
+  if (stopsEls[currentIdx]) {
+    stopsEls[currentIdx].scrollIntoView({behavior: 'smooth', inline: 'center', block: 'nearest'});
+  }
+}
+
+function closeNextStopPopup() {
+  document.getElementById('nextStopPopup').style.display = 'none';
+  clearInterval(busAnimInterval);
+}
+
+function nextStopAlert() {
+  // Fetch source and destination from planner inputs
+  const source = document.getElementById('source').value.trim() || 'Akurde';
+  const destination = document.getElementById('destination').value.trim() || 'Gharapa';
+  // Example villages in between (from Kolhapur list)
+  const exampleVillages = [
+    "Alave", "Amatewadi", "Ambarde", "Ambavade",
+    "Apati", "Arale", "Asagaon", "Asurle", "Atkirwadi",
+    "Awali", "Badewadi", "Bahirewadi"
+  ];
+  // Build timeline: source, 3-5 random villages, destination
+  let midStops = exampleVillages.slice(0, 4 + Math.floor(Math.random()*3));
+  busAnimStops = [source, ...midStops, destination];
+  busAnimCurrentIdx = 0;
+  busAnimDestination = destination;
+  openNextStopPopup(busAnimStops, busAnimCurrentIdx, busAnimDestination);
+  clearInterval(busAnimInterval);
+  busAnimInterval = setInterval(() => {
+    busAnimCurrentIdx++;
+    if (busAnimCurrentIdx >= busAnimStops.length) {
+      clearInterval(busAnimInterval);
+      setTimeout(closeNextStopPopup, 1200);
+      return;
+    }
+    openNextStopPopup(busAnimStops, busAnimCurrentIdx, busAnimDestination);
+  }, 300000); // 5 minutes in ms
+}
 // --- Data (villages of Kolhapur) ---
 const busStops = [
   // sample subset; expand this list with all villages from Kolhapur district (~1223 villages) :contentReference[oaicite:0]{index=0}
